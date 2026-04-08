@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export const jobTypeSchema = z.enum(['extractor', 'generator', 'packager'])
+export const jobTypeSchema = z.enum(['extractor', 'generator'])
 export type JobType = z.infer<typeof jobTypeSchema>
 
 export const jobStatusSchema = z.enum(['complete', 'error'])

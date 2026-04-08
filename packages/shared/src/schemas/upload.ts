@@ -1,13 +1,13 @@
 import { z } from 'zod'
 
-export const fileTypeSchema = z.enum(['pdf', 'pptx'])
+export const fileTypeSchema = z.enum(['pdf', 'pptx', 'csv', 'apkg'])
 export type FileType = z.infer<typeof fileTypeSchema>
 
+// CSV and .apkg imports skip 'generating' — they go uploaded → extracting → complete
 export const uploadStatusSchema = z.enum([
   'uploaded',
   'extracting',
   'generating',
-  'packaging',
   'complete',
   'error',
 ])
