@@ -4,3 +4,12 @@ dist/
 .env.local
 *.env.local
 .claude/settings.local.json
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/

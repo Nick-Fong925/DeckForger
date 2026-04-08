@@ -1,0 +1,7 @@
+# Generator job — calls Claude API to produce flashcards from extracted text
+# Claude API client
+anthropic>=0.34.0
+# Data models at system boundaries
+pydantic>=2.0.0
+# Webhook callback to Express server
+requests>=2.31.0

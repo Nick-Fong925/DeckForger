@@ -1,6 +1,7 @@
 import { type ReactElement } from 'react'
 import { Outlet, NavLink } from 'react-router-dom'
 import LogoMark from '../components/art/LogoMark'
+import { useAuth } from '../hooks/useAuth'
 
 const navItems = [
   { to: '/dashboard', label: 'Home' },
@@ -9,6 +10,12 @@ const navItems = [
 ]
 
 export default function RootLayout(): ReactElement {
+  const { signOut } = useAuth()
+
+  async function handleSignOut(): Promise<void> {
+    await signOut()
+  }
+
   return (
     <div className="min-h-screen">
       <nav
@@ -40,6 +47,12 @@ export default function RootLayout(): ReactElement {
                 {label}
               </NavLink>
             ))}
+            <button
+              onClick={handleSignOut}
+              className="btn btn-ghost text-sm px-3 py-2.5"
+            >
+              Sign out
+            </button>
           </div>
         </div>
       </nav>

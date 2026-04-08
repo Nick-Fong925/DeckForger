@@ -1,0 +1,9 @@
+# Extractor job — handles PDF, PPTX, CSV, and .apkg files
+# PDF text extraction
+pymupdf>=1.24.0
+# PPTX slide extraction
+python-pptx>=1.0.0
+# Data models at system boundaries (same philosophy as Zod in TS)
+pydantic>=2.0.0
+# Webhook callback to Express server
+requests>=2.31.0
