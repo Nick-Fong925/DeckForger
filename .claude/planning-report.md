@@ -1,0 +1,190 @@
+# DeckForge — Planning Report
+
+## Overview
+
+DeckForge is a full-stack flashcard generation app that takes uploaded PDF or PPTX files, extracts their text, generates Anki-compatible flashcards via the Claude API, and delivers a downloadable `.apkg` file. The primary purpose of this project is educational — it is being built as a structured learning vehicle for TypeScript, Express, React, Firebase Auth, Supabase, and GCP infrastructure. The end product is real and useful, but every technology choice is also an intentional learning touchpoint.
+
+The app follows an async pipeline: upload → extract → generate → package → download. Each stage is a discrete job, connected by a webhook pattern that will translate cleanly from local execution to Cloud Run without interface changes.
+
+---
+
+## Minimum Viable Validation
+
+**The smallest thing that proves the core assumption:** a single uploaded PDF produces a downloadable `.apkg` file with correct flashcards.
+
+This can be validated entirely locally before any GCP infrastructure exists:
+- Upload a PDF via a curl command (no frontend needed)
+- Run the three Python scripts manually in sequence
+- Open the `.apkg` in Anki and verify the cards make sense
+
+Cost: zero. Failure here means the Claude API prompt needs tuning or the text extraction is losing structure — both fixable before any infrastructure investment.
+
+---
+
+## Feasibility Assessment
+
+**Technical:** Fully feasible. All libraries are mature — PyMuPDF, python-pptx, genanki, and the Anthropic SDK are all stable and well-documented. The TypeScript monorepo pattern with shared Zod schemas is a proven approach.
+
+**Operational:** Local development is straightforward. GCP migration adds complexity (Dockerfiles, IAM, Secret Manager) but is well-documented and the scope is bounded.
+
+**Economic:** Anthropic API costs are the only meaningful variable cost. At typical flashcard density (~20-30 cards per document), Claude Sonnet costs are low per document. Supabase and Firebase free tiers cover development and light production usage.
+
+**Legal/regulatory:** No significant concerns. The app processes user-uploaded files and calls the Anthropic API. Standard data handling practices apply.
+
+**Uncertain facts to verify before production:**
+- GCS signed URL expiry times and whether they are appropriate for the expected upload window
+- Supabase RLS behavior when using the service role key (bypasses RLS by design — confirm this is the intended pattern)
+- Cloud Run Job cold start times and whether they affect perceived UX
+
+---
+
+## Key Considerations
+
+**Firebase Auth + Supabase do not natively integrate.** Supabase's built-in RLS expects its own JWTs. Since Firebase is handling auth, the server uses Supabase's service role key (which bypasses RLS) and enforces row ownership in application code. This is a deliberate trade-off: Firebase's auth UX and ecosystem vs. Supabase's native security model. Understand this consciously — it means the server is the security boundary, not the database layer.
+
+**The webhook pattern is the load-bearing architectural seam.** Whether jobs run via `child_process.spawn()` locally or Cloud Run in production, the interface is identical: job completes, calls `POST /webhooks/job-complete`, server advances the pipeline. Keep this interface clean from day one so the GCP migration is a deployment change, not a code change.
+
+**Local-first development is the right sequencing.** Validating the full pipeline locally before deploying eliminates an entire class of bugs (is this broken because of my code, or because of my infra config?). GCP infrastructure should be added only after the local pipeline produces a correct `.apkg`.
+
+**Zod shared schemas are the glue.** The `packages/shared` package ensures that validation logic is written once and enforced at both the API boundary and in the frontend. This is the most important TypeScript learning pattern in the project — understand it deeply in Phase 1.
+
+---
+
+## Technology Recommendations
+
+**Monorepo tooling: npm workspaces** (not Turborepo or nx yet). Reason: workspaces are built into npm, zero config, and sufficient for three packages. Adding a build orchestrator is complexity that doesn't pay off until you have a CI pipeline with multiple build targets. Revisit when you have more than 5 packages or meaningful build caching needs.
+
+**Supabase: use the hosted free tier from day one.** Running Supabase locally via Docker adds setup friction with no learning benefit. The hosted tier is free, always available, and is what production will use anyway.
+
+**Firebase Auth: use the real Firebase project locally.** The Firebase emulator suite is useful for CI but adds local setup complexity. For a learning project, using the real Firebase project locally is fine.
+
+**Python job runner (local): `child_process.spawn()` in Node.** Simple, no extra dependencies. The webhook callback from the job back to Express is what matters — keep that interface clean so Cloud Run is a drop-in replacement.
+
+**Frontend state: React Query.** Reason: upload status needs polling (the pipeline is async), and React Query's refetch intervals and stale-while-revalidate behavior handle this cleanly. Context/Redux would require manual polling logic.
+
+---
+
+## Performance & Feasibility Constraints
+
+The pipeline is inherently async and user-perceived latency is dominated by:
+1. Claude API call time (typically 5-30 seconds depending on document length)
+2. genanki `.apkg` build time (fast, <1 second for typical decks)
+
+**There is no meaningful performance constraint to optimize for in the MVP.** The app is not latency-sensitive — users upload a file and come back when it's done. Status polling every 3-5 seconds via React Query is sufficient UX.
+
+When running locally, `child_process.spawn()` adds no meaningful overhead vs. Cloud Run. When moving to Cloud Run, cold starts (~1-3 seconds) are acceptable given the async nature of the pipeline.
+
+**TypeScript compilation:** Use `tsc --noEmit` for type checking and `tsx` or `ts-node` for local development. Avoid premature optimization of the build pipeline.
+
+---
+
+## Implementation Trade-offs
+
+**Signed URL upload (plan) vs. server-proxied upload (simpler locally)**
+
+The plan calls for client → GCS direct upload via signed URL. Locally, this is replaced by `multer` (server receives the file). This is the right trade-off: signed URLs are the correct production pattern (avoids routing large files through your server), but `multer` is faster to implement and good enough locally. The server route interface (`POST /uploads/init` returning an upload target) stays the same — only the destination changes.
+
+**Three separate Cloud Run Jobs vs. one combined job**
+
+The plan uses three discrete jobs (extractor, generator, packager). This is correct for production (independent scaling, isolated failure domains) but adds local complexity. Locally, run them as three sequential Python scripts. Do not merge them into one script "for simplicity" — the three-job boundary is the thing you're learning.
+
+**Supabase service role vs. per-user JWT**
+
+Using the service role key on the server means the server is fully trusted and RLS is not enforced at the DB layer. The alternative — passing Firebase JWTs to Supabase and configuring custom JWT verification — is significantly more complex and not the standard Firebase+Supabase integration pattern. Stick with the service role key; enforce ownership in the server's route handlers.
+
+---
+
+## Phased Implementation Plan
+
+### Phase 1 — TypeScript monorepo + Zod schemas
+**Goal:** Understand how shared types flow across packages and how Zod enforces them at runtime.
+**Work:**
+- Initialize monorepo with npm workspaces
+- Create `packages/shared` with all Zod schemas and exported TypeScript types
+- Create `packages/server` with bare Express + one validated route importing from shared
+**Success criteria:** `curl` a route with a malformed body, get a typed Zod error. Import a type from `shared` in `server` with full TypeScript autocomplete.
+**Unlocks:** Every subsequent phase depends on the shared schemas being in place.
+
+### Phase 2 — Firebase Auth middleware
+**Goal:** Understand the JWT verification flow and the middleware pattern in Express.
+**Work:**
+- Set up a Firebase project, enable Google sign-in
+- Add Firebase Admin SDK to the server
+- Write `authenticate` middleware
+- Add `POST /auth/register` endpoint
+**Success criteria:** A request with no token gets 401. A request with a valid Firebase ID token gets the user's `firebase_uid` attached to `req.user`.
+**Unlocks:** All protected routes.
+
+### Phase 3 — Supabase integration
+**Goal:** Understand Supabase, SQL migrations, and the RLS/service-role pattern.
+**Work:**
+- Write SQL migrations for `users`, `uploads`, `decks`
+- Run migrations in Supabase dashboard
+- Connect server to Supabase with service role key
+- Wire `GET /uploads` and `GET /decks` to return user-scoped rows
+**Success criteria:** Inserting a row via the server returns it in the GET. A row with a different `firebase_uid` is not returned.
+**Unlocks:** Persistent state for the upload pipeline.
+
+### Phase 4 — File upload flow (local disk)
+**Goal:** Understand the upload → job trigger → webhook pattern end-to-end.
+**Work:**
+- Add `multer` to handle file uploads to local disk
+- Implement `POST /uploads/init` (saves file, inserts Supabase row, triggers extractor via `child_process.spawn()`)
+- Implement `POST /webhooks/job-complete` (advances pipeline state in Supabase)
+**Success criteria:** Upload a PDF via curl, see status advance through `uploaded` → `extracting` in Supabase.
+**Unlocks:** The Python job pipeline.
+
+### Phase 5 — Python pipeline (local)
+**Goal:** Validate the full extract → generate → package pipeline produces correct output.
+**Work:**
+- Build `extractor/main.py` (PyMuPDF / python-pptx → `extracted.json`)
+- Build `generator/main.py` (Claude API → `cards.json`)
+- Build `packager/main.py` (genanki → `.apkg`)
+- Each script calls `POST /webhooks/job-complete` on completion
+**Success criteria:** Upload a PDF, download a `.apkg`, open it in Anki, verify the cards are correct.
+**Unlocks:** A fully working backend pipeline. All subsequent work is either frontend or infrastructure.
+
+### Phase 6 — React frontend
+**Goal:** Build the UI on top of a validated API. Learn Firebase client SDK, React Query, protected routes.
+**Work:**
+- Vite + React + TypeScript setup
+- Firebase client auth (Google sign-in)
+- Axios interceptor for token attachment
+- Pages: `/login`, `/dashboard`, `/upload`, `/decks`
+- React Query for status polling
+**Success criteria:** Full end-to-end flow in the browser without touching curl.
+**Unlocks:** A usable product.
+
+### Phase 7 — GCP migration
+**Goal:** Understand what production infrastructure actually looks like. Learn GCS, Cloud Run, Secret Manager.
+**Work:**
+- Swap `multer` for GCS signed URL upload flow
+- Containerize each Python job with Docker
+- Deploy jobs to Cloud Run
+- Wire Cloud Run job triggers from the Express server
+- Move secrets to GCP Secret Manager
+- Deploy Express server to Cloud Run
+**Success criteria:** The full pipeline runs in GCP with no local processes.
+**Unlocks:** A production-deployable app.
+
+---
+
+## Gotchas
+
+**Gotcha 1: Firebase Auth + Supabase RLS don't natively integrate.**
+Supabase RLS expects its own JWTs. Using Firebase UIDs means using the service role key on the server and enforcing ownership in application code. This is fine but means the server is the security boundary — a bug in a route handler can expose another user's data. Mitigation: always filter by `firebase_uid` in every server query, never return unfiltered rows.
+
+**Gotcha 2: The webhook pattern must be kept clean from day one.**
+`child_process.spawn()` locally and Cloud Run jobs in production have the same interface: job calls `POST /webhooks/job-complete` when done. If you shortcut this locally (e.g., blocking `await` on the job instead of using the webhook), you will need to refactor before GCP migration. Keep the webhook interface even when running locally.
+
+**Gotcha 3: Designing infrastructure before validating the core pipeline.**
+The biggest risk for this project as a learning exercise is spending time on GCP setup before confirming that the Claude API produces good flashcards from real documents. Validate the Python pipeline locally against a real PDF before touching any infrastructure. If the flashcard quality is poor, the prompt needs work — that should be discovered cheaply.
+
+---
+
+## Open Questions
+
+- What document types will be most commonly uploaded? (Affects how much effort to put into PPTX support vs. PDF)
+- Should the app support re-generating a deck from an existing upload, or is each upload a one-time pipeline run?
+- Is a user account system needed beyond Firebase UID, or is email the only user-facing identity?
+- What Anki note type should the packager use? Basic (front/back) is assumed — confirm this is sufficient.
