@@ -1,0 +1,128 @@
+@import "tailwindcss";
+
+@theme {
+  /* Palette */
+  --color-parchment: #FDF4E3;
+  --color-parchment-dark: #F5E6C8;
+  --color-card: #FFFCF5;
+  --color-ink: #2A1810;
+  --color-ink-muted: #8B7355;
+  --color-amber: #F0A500;
+  --color-amber-light: #FFD166;
+  --color-coral: #E8654A;
+  --color-sky: #6BADE0;
+  --color-sage: #5BAD72;
+  --color-tan: #E8D5A8;
+
+  /* Typography */
+  --font-display: 'Paytone One', sans-serif;
+  --font-body: 'Nunito', system-ui, sans-serif;
+
+  /* Cartoon shadows — flat hard drop, no blur */
+  --shadow-card: 4px 4px 0px #2A1810;
+  --shadow-card-lg: 6px 6px 0px #2A1810;
+  --shadow-btn: 3px 3px 0px #2A1810;
+  --shadow-btn-hover: 5px 5px 0px #2A1810;
+  --shadow-btn-active: 1px 1px 0px #2A1810;
+
+  /* Radii */
+  --radius-card: 1rem;
+  --radius-btn: 0.625rem;
+  --radius-badge: 999px;
+
+  /* Status badge palette */
+  --color-status-extracting-bg: #C8E4F7;
+  --color-status-extracting-dot: #1D6FA4;
+  --color-status-generating-bg: #FFE8A0;
+  --color-status-generating-dot: #B07D00;
+  --color-status-complete-bg: #B8EEC8;
+  --color-status-complete-dot: #1A6B35;
+  --color-status-error-bg: #F7C8C0;
+  --color-status-error-dot: #B03020;
+}
+
+/* Base */
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-parchment);
+  color: var(--color-ink);
+  /* Subtle marble warmth — layered soft radial gradients */
+  background-image:
+    radial-gradient(ellipse at 15% 25%, rgba(240, 165, 0, 0.07) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 75%, rgba(107, 173, 224, 0.06) 0%, transparent 55%),
+    radial-gradient(ellipse at 50% 50%, rgba(255, 252, 245, 0.5) 0%, transparent 80%);
+  min-height: 100vh;
+}
+
+/* Cartoon card — the core reusable pattern */
+.card {
+  background: var(--color-card);
+  border: 2.5px solid var(--color-ink);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+.card-hover {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card-lg);
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-body);
+  font-weight: 700;
+  border-radius: var(--radius-btn);
+  border: 2.5px solid var(--color-ink);
+  box-shadow: var(--shadow-btn);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  cursor: pointer;
+  /* 44px minimum touch target (iOS/Android HIG) */
+  min-height: 2.75rem;
+}
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-btn-hover);
+}
+.btn:active {
+  transform: translateY(1px);
+  box-shadow: var(--shadow-btn-active);
+}
+
+.btn-primary {
+  background: var(--color-amber);
+  color: var(--color-ink);
+  padding: 0.5rem 1.25rem;
+}
+
+.btn-secondary {
+  background: var(--color-card);
+  color: var(--color-ink);
+  padding: 0.5rem 1.25rem;
+}
+
+.btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  color: var(--color-ink-muted);
+  font-weight: 600;
+}
+.btn-ghost:hover {
+  background: var(--color-parchment-dark);
+  box-shadow: none;
+  color: var(--color-ink);
+}
+.btn-ghost:active {
+  box-shadow: none;
+}
+
+/* Display text */
+.font-display {
+  font-family: var(--font-display);
+}

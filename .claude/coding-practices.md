@@ -278,3 +278,54 @@ When a rule must be broken for a legitimate reason, the exception must be:
 1. Documented in a comment at the point of exception.
 2. Discussed in the PR description.
 3. Not a precedent for future exceptions.
+
+---
+
+## 11. Responsive Design
+
+DeckForge must feel native across mobile (375px+), tablet/iPad (768px+), and desktop (1024px+). Use a **mobile-first** approach — write base styles for mobile, then layer `sm:`, `md:`, and `lg:` overrides for larger screens.
+
+### Breakpoints (Tailwind defaults)
+
+| Prefix | Min-width | Target |
+|---|---|---|
+| _(none)_ | 0px | Mobile (375px base design target) |
+| `sm:` | 640px | Large phone / small tablet |
+| `md:` | 768px | iPad portrait |
+| `lg:` | 1024px | iPad landscape / small desktop |
+| `xl:` | 1280px | Wide desktop |
+
+### Touch Targets
+
+- All interactive elements (buttons, links, inputs) must be **at least 44×44px** — the iOS and Android minimum.
+- The `.btn` class sets `min-height: 2.75rem` (44px) globally. Never shrink this.
+- Use `py-2.5` or `py-3` as the minimum vertical padding on touch-facing buttons. **Never `py-1`** in a nav or action context.
+- Leave at least 8px of space between adjacent tap targets.
+
+### Layout & Spacing
+
+- Always use responsive horizontal padding on containers: **`px-4 sm:px-6`** — never a bare `px-6`.
+- **Page-level `max-w-*` constraints** (e.g., `max-w-xl`) look fine on desktop but leave wasted whitespace on iPad portrait. Expand them at larger breakpoints: `max-w-xl md:max-w-2xl`, or remove and let the parent container govern width.
+- Stack vertically on mobile, go side-by-side on tablet+: `flex-col sm:flex-row` or `grid-cols-1 sm:grid-cols-2`.
+- **Header rows** (title + action button) must wrap gracefully: use `flex-col gap-3 sm:flex-row sm:items-center sm:justify-between`. Never assume they won't wrap.
+
+### Typography
+
+- Page `<h1>` headings: **`text-2xl sm:text-3xl`** — `text-3xl` alone is oversized on small phones.
+- Never scale body text below `text-sm` — readability on small screens matters more than density.
+
+### Navigation
+
+- All nav links must meet the 44px touch target height — `py-2.5` minimum.
+- On screens narrower than `sm:` (640px), long nav labels can overflow. Abbreviate, hide secondary links, or use a menu.
+- Never let the nav overflow horizontally without a scroll or collapse strategy.
+
+### Grids
+
+- Default to `grid-cols-1`, expand with `sm:grid-cols-2`, then `lg:grid-cols-3`.
+- `grid-cols-2` is acceptable for small content tiles (e.g., format badges) but test at 375px — if text wraps badly, drop to `grid-cols-1 sm:grid-cols-2`.
+- Never use a fixed multi-column grid without a single-column mobile fallback.
+
+### Testing Widths
+
+Test every page at: **375px** (iPhone SE), **768px** (iPad portrait), **1024px** (iPad landscape / small desktop). Use browser DevTools device emulation during development.
