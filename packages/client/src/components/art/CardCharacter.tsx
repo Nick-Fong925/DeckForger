@@ -6,11 +6,11 @@
  */
 import { type ReactElement } from 'react'
 
-interface CardCharacterProps {
+type CardCharacterProps = {
   className?: string
 }
 
-interface SparkleProps {
+type SparkleProps = {
   cx: number
   cy: number
   r: number

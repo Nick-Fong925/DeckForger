@@ -8,6 +8,10 @@ dist/
 # Firebase service account keys
 *firebase-adminsdk*.json
 
+# Uploaded files and extracted text (local dev only)
+uploads/
+jobs/tmp/
+
 # Python
 .venv/
 __pycache__/

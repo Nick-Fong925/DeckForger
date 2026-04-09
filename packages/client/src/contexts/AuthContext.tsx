@@ -12,7 +12,7 @@ import {
   onAuthStateChanged,
   type User,
 } from 'firebase/auth'
-import { auth } from '../lib/firebase'
+import { auth } from '@/lib/firebase'
 
 export type AuthContextValue = {
   user: User | null
@@ -25,7 +25,7 @@ export const AuthContext = createContext<AuthContextValue | undefined>(undefined
 
 const googleProvider = new GoogleAuthProvider()
 
-interface AuthProviderProps {
+type AuthProviderProps = {
   children: ReactNode
 }
 

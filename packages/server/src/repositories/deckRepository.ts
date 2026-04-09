@@ -1,15 +1,12 @@
 import { getFirestoreDb } from '../config/firestore'
-import { deckSchema, type Deck } from '@deckforge/shared'
+import { deckSchema, type Deck, type CreateCardInput } from '@deckforge/shared'
 import { normalizeTimestamps } from './firestoreUtils'
 import type { QueryDocumentSnapshot } from 'firebase-admin/firestore'
 
 // normalizeTimestamps is shallow — card fields are plain strings, never Timestamps
 function parseDoc(id: string, data: FirebaseFirestore.DocumentData): Deck | null {
   const result = deckSchema.safeParse({ ...normalizeTimestamps(data), id })
-  if (!result.success) {
-    console.error(`Deck ${id} failed schema validation:`, result.error.message)
-    return null
-  }
+  if (!result.success) return null
   return result.data
 }
 
@@ -25,6 +22,32 @@ export async function listDecksByUid(uid: string): Promise<Deck[]> {
     const deck = parseDoc(doc.id, doc.data())
     return deck ? [deck] : []
   })
+}
+
+export async function createDeckDoc(
+  uid: string,
+  title: string,
+  uploadId: string | null,
+  cards: CreateCardInput[],
+): Promise<Deck> {
+  const db = getFirestoreDb()
+  const ref = db.collection('decks').doc()
+  const now = new Date().toISOString()
+  const data = {
+    firebase_uid: uid,
+    upload_id: uploadId,
+    title,
+    cards: cards.map((c) => ({
+      id: crypto.randomUUID(),
+      front: c.front,
+      back: c.back,
+      front_image_url: null,
+      back_image_url: null,
+    })),
+    created_at: now,
+  }
+  await ref.set(data)
+  return deckSchema.parse({ ...data, id: ref.id })
 }
 
 export async function getDeckById(id: string, uid: string): Promise<Deck | null> {

@@ -1,4 +1,6 @@
 import { useState, type ReactElement } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useUploadMutation } from '@/hooks/useUploadMutation'
 
 const acceptedTypes = [
   { ext: 'PDF', icon: '📄', desc: 'Extract text and generate cards with AI' },
@@ -7,13 +9,22 @@ const acceptedTypes = [
   { ext: 'APKG', icon: '🃏', desc: 'Import an existing Anki deck' },
 ]
 
+const BYTES_PER_KB = 1024
+
 export default function UploadPage(): ReactElement {
   const [file, setFile] = useState<File | null>(null)
-  const [dragging, setDragging] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
+  const navigate = useNavigate()
+  const { mutate, isPending, isError, error } = useUploadMutation()
 
-  function handleDrop(e: React.DragEvent) {
+  function handleDragOver(e: React.DragEvent): void {
     e.preventDefault()
-    setDragging(false)
+    setIsDragging(true)
+  }
+
+  function handleDrop(e: React.DragEvent): void {
+    e.preventDefault()
+    setIsDragging(false)
     const dropped = e.dataTransfer.files[0]
     if (dropped) setFile(dropped)
   }
@@ -32,16 +43,16 @@ export default function UploadPage(): ReactElement {
       {/* Drop zone */}
       <div
         onDrop={handleDrop}
-        onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
-        onDragLeave={() => setDragging(false)}
+        onDragOver={handleDragOver}
+        onDragLeave={() => setIsDragging(false)}
         className="card flex flex-col items-center gap-3 py-10 px-6 sm:py-12 sm:px-8 text-center transition-colors"
         style={
-          dragging
+          isDragging
             ? { background: 'var(--color-amber-light)', borderColor: 'var(--color-ink)' }
             : {}
         }
       >
-        <span className="text-5xl">{dragging ? '🎯' : '☁️'}</span>
+        <span className="text-5xl">{isDragging ? '🎯' : '☁️'}</span>
         <p className="font-bold text-lg" style={{ color: 'var(--color-ink)' }}>
           Drop your file here
         </p>
@@ -68,11 +79,23 @@ export default function UploadPage(): ReactElement {
               {file.name}
             </p>
             <p className="text-xs font-semibold mt-0.5" style={{ color: 'var(--color-ink-muted)' }}>
-              {(file.size / 1024).toFixed(0)} KB
+              {(file.size / BYTES_PER_KB).toFixed(0)} KB
             </p>
           </div>
-          <button className="btn btn-primary">Generate Deck</button>
+          <button
+            className="btn btn-primary"
+            disabled={isPending || !file}
+            onClick={() => { if (file) mutate(file, { onSuccess: () => { setFile(null); navigate('/dashboard') } }) }}
+          >
+            {isPending ? 'Uploading…' : 'Generate Deck'}
+          </button>
         </div>
+      )}
+
+      {isError && (
+        <p className="text-sm font-semibold" style={{ color: 'var(--color-coral)' }}>
+          {error.message}
+        </p>
       )}
 
       {/* Supported types */}

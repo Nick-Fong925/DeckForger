@@ -1,7 +1,7 @@
 import { type ReactElement } from 'react'
 import { Outlet, NavLink } from 'react-router-dom'
-import LogoMark from '../components/art/LogoMark'
-import { useAuth } from '../hooks/useAuth'
+import LogoMark from '@/components/art/LogoMark'
+import { useAuth } from '@/hooks/useAuth'
 
 const navItems = [
   { to: '/dashboard', label: 'Home' },

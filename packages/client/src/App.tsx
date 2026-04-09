@@ -7,6 +7,8 @@ import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import UploadPage from './pages/UploadPage'
 import DecksPage from './pages/DecksPage'
+import DeckDetailPage from './pages/DeckDetailPage'
+import CreateDeckPage from './pages/CreateDeckPage'
 import StudyPage from './pages/StudyPage'
 
 export default function App(): ReactElement {
@@ -20,6 +22,8 @@ export default function App(): ReactElement {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/upload" element={<UploadPage />} />
             <Route path="/decks" element={<DecksPage />} />
+            <Route path="/decks/new" element={<CreateDeckPage />} />
+            <Route path="/decks/:id" element={<DeckDetailPage />} />
             <Route path="/decks/:id/study" element={<StudyPage />} />
           </Route>
         </Route>
