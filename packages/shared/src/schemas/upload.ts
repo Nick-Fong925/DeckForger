@@ -14,13 +14,16 @@ export const uploadStatusSchema = z.enum([
 export type UploadStatus = z.infer<typeof uploadStatusSchema>
 
 export const uploadSchema = z.object({
-  id: z.string().uuid(),
-  firebase_uid: z.string(),
-  file_name: z.string(),
-  gcs_path: z.string(),
+  id: z.string().min(1),
+  firebase_uid: z.string().min(1),
+  file_name: z.string().min(1),
+  gcs_path: z.string().nullable(),
   file_type: fileTypeSchema,
   status: uploadStatusSchema,
   created_at: z.string().datetime(),
 })
 
 export type Upload = z.infer<typeof uploadSchema>
+
+export const createUploadSchema = uploadSchema.omit({ id: true, created_at: true, firebase_uid: true })
+export type CreateUploadInput = z.infer<typeof createUploadSchema>

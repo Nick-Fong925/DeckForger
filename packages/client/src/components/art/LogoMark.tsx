@@ -4,7 +4,7 @@
  */
 import { type ReactElement } from 'react'
 
-interface LogoMarkProps {
+type LogoMarkProps = {
   size?: number
 }
 

@@ -1,8 +1,34 @@
-import { type ReactElement } from 'react'
+import { useEffect, type ReactElement } from 'react'
+import { useNavigate } from 'react-router-dom'
 import CardCharacter from '../components/art/CardCharacter'
 import LogoMark from '../components/art/LogoMark'
+import { useAuth } from '../hooks/useAuth'
 
 export default function LoginPage(): ReactElement {
+  const { user, isLoading, signIn } = useAuth()
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    if (user) navigate('/dashboard', { replace: true })
+  }, [user, navigate])
+
+  async function handleSignIn(): Promise<void> {
+    await signIn()
+  }
+
+  if (isLoading) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: 'var(--color-parchment)' }}
+      >
+        <span className="font-display text-xl" style={{ color: 'var(--color-ink-muted)' }}>
+          Loading...
+        </span>
+      </div>
+    )
+  }
+
   return (
     <div
       className="min-h-screen flex items-center justify-center px-4"
@@ -30,7 +56,7 @@ export default function LoginPage(): ReactElement {
           <p className="text-center text-sm font-bold" style={{ color: 'var(--color-ink-muted)' }}>
             Sign in to get started
           </p>
-          <button className="btn btn-primary w-full gap-3 py-3">
+          <button className="btn btn-primary w-full gap-3 py-3" onClick={handleSignIn}>
             <GoogleIcon />
             Continue with Google
           </button>

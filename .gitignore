@@ -4,3 +4,19 @@ dist/
 .env.local
 *.env.local
 .claude/settings.local.json
+
+# Firebase service account keys
+*firebase-adminsdk*.json
+
+# Uploaded files and extracted text (local dev only)
+uploads/
+jobs/tmp/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/

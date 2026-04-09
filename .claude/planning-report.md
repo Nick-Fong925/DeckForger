@@ -211,6 +211,16 @@ Do not reach for a third-party library for `.apkg` parsing. Python's built-in `z
 
 ---
 
+## Pending Deployment Steps
+
+These are manual steps that must be completed before the app is production-ready. They cannot be automated by code changes alone.
+
+- **Deploy Firestore Security Rules** — run `firebase deploy --only firestore:rules` once the Firebase CLI is set up. The rules file is at `firestore.rules` in the project root. Until deployed, the rules have no effect — the server is the only enforcement layer.
+- **Set `WEBHOOK_SECRET` in all environments** — generate a long random string (e.g. `openssl rand -hex 32`) and set it in local `.env` and in Cloud Run secrets (Phase 7). Python jobs must pass this as `Authorization: Bearer <secret>` when calling `POST /webhooks/job-complete`.
+- **Set `SERVER_URL` in production** — defaults to `http://localhost:8080` for local dev; must be set to the Cloud Run service URL in production so Python jobs can reach the webhook endpoint.
+
+---
+
 ## Open Questions
 
 - Should the app support re-generating a deck from an existing upload, or is each upload a one-time pipeline run?

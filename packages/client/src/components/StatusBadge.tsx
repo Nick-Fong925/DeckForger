@@ -1,7 +1,7 @@
 import { type ReactElement } from 'react'
 import { type UploadStatus } from '@deckforge/shared'
 
-interface StatusBadgeProps {
+type StatusBadgeProps = {
   status: UploadStatus
 }
 

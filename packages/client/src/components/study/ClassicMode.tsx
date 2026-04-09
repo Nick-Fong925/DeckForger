@@ -1,11 +1,12 @@
-import { useState, type ReactElement } from 'react'
+import { type ReactElement } from 'react'
+import { useClassicModeState } from '@/hooks/useClassicModeState'
 
-interface Card {
+type Card = {
   front: string
   back: string
 }
 
-interface ClassicModeProps {
+type ClassicModeProps = {
   cards: Card[]
   onExit: () => void
 }
@@ -23,22 +24,11 @@ const ratingOptions: RatingOption[] = [
 ]
 
 export default function ClassicMode({ cards, onExit }: ClassicModeProps): ReactElement {
-  const [index, setIndex] = useState(0)
-  const [flipped, setFlipped] = useState(false)
-  const [done, setDone] = useState(false)
+  const { index, isFlipped, isDone, flip, advance } = useClassicModeState()
 
   const card = cards[index]
 
-  function advance(): void {
-    if (index + 1 >= cards.length) {
-      setDone(true)
-    } else {
-      setIndex((i) => i + 1)
-      setFlipped(false)
-    }
-  }
-
-  if (done) {
+  if (isDone) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-5 text-center">
         <div
@@ -96,20 +86,20 @@ export default function ClassicMode({ cards, onExit }: ClassicModeProps): ReactE
 
       {/* Flashcard */}
       <button
-        onClick={() => setFlipped((f) => !f)}
+        onClick={flip}
         className="card w-full min-h-52 sm:min-h-64 flex flex-col items-center justify-center gap-4 p-6 sm:p-8 cursor-pointer transition-colors"
-        style={flipped ? { background: 'var(--color-amber-light)' } : {}}
+        style={isFlipped ? { background: 'var(--color-amber-light)' } : {}}
       >
         <span
           className="text-xs font-bold uppercase tracking-widest"
           style={{ color: 'var(--color-ink-muted)' }}
         >
-          {flipped ? 'Answer' : 'Question'}
+          {isFlipped ? 'Answer' : 'Question'}
         </span>
         <p className="font-display text-xl text-center leading-relaxed" style={{ color: 'var(--color-ink)' }}>
-          {flipped ? card.back : card.front}
+          {isFlipped ? card.back : card.front}
         </p>
-        {!flipped && (
+        {!isFlipped && (
           <span className="text-xs font-bold" style={{ color: 'var(--color-ink-muted)' }}>
             tap to flip
           </span>
@@ -117,12 +107,12 @@ export default function ClassicMode({ cards, onExit }: ClassicModeProps): ReactE
       </button>
 
       {/* Rating buttons */}
-      {flipped && (
+      {isFlipped && (
         <div className="grid grid-cols-3 gap-3">
           {ratingOptions.map(({ label, icon, color }) => (
             <button
               key={label}
-              onClick={advance}
+              onClick={() => advance(cards.length)}
               className="card flex flex-col items-center gap-1 py-4 sm:py-3 cursor-pointer transition-colors"
               style={{ background: color }}
             >
