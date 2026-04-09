@@ -5,6 +5,9 @@ dist/
 *.env.local
 .claude/settings.local.json
 
+# Firebase service account keys
+*firebase-adminsdk*.json
+
 # Python
 .venv/
 __pycache__/

@@ -6,6 +6,7 @@ import dotenv from 'dotenv'
 dotenv.config()
 
 import { authRouter } from './routes/auth'
+import { decksRouter } from './routes/decks'
 import { errorHandler } from './middleware/errorHandler'
 
 const app = express()
@@ -20,6 +21,7 @@ app.get('/health', (_req, res) => {
 })
 
 app.use('/auth', authRouter)
+app.use('/decks', decksRouter)
 
 // Must be registered last — catches errors thrown by all route handlers
 app.use(errorHandler)

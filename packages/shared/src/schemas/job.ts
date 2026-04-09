@@ -7,7 +7,7 @@ export const jobStatusSchema = z.enum(['complete', 'error'])
 export type JobStatus = z.infer<typeof jobStatusSchema>
 
 export const jobEventSchema = z.object({
-  upload_id: z.string().uuid(),
+  upload_id: z.string().min(1),
   job_type: jobTypeSchema,
   status: jobStatusSchema,
   error: z.string().optional(),

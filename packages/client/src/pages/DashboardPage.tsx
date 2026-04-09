@@ -1,25 +1,5 @@
 import { type ReactElement } from 'react'
 import { Link } from 'react-router-dom'
-import StatusBadge from '../components/StatusBadge'
-import { type UploadStatus } from '@deckforge/shared'
-
-const mockUploads: Array<{
-  id: string
-  file_name: string
-  status: UploadStatus
-  created_at: string
-}> = [
-  { id: '1', file_name: 'biology-notes.pdf', status: 'complete', created_at: '2026-04-07T10:00:00Z' },
-  { id: '2', file_name: 'lecture-slides.pptx', status: 'extracting', created_at: '2026-04-07T11:00:00Z' },
-  { id: '3', file_name: 'history-chapter.pdf', status: 'error', created_at: '2026-04-07T12:00:00Z' },
-]
-
-const fileIcon: Record<string, string> = {
-  pdf: '📄',
-  pptx: '📊',
-  csv: '📋',
-  apkg: '🃏',
-}
 
 export default function DashboardPage(): ReactElement {
   return (
@@ -39,40 +19,13 @@ export default function DashboardPage(): ReactElement {
         </Link>
       </div>
 
-      {/* Upload list */}
-      <div className="space-y-3">
-        {mockUploads.map((upload) => {
-          const ext = upload.file_name.split('.').pop() ?? 'pdf'
-          return (
-            <div
-              key={upload.id}
-              className="card card-hover flex items-center gap-4 px-5 py-4"
-            >
-              <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-xl"
-                style={{
-                  background: 'var(--color-parchment-dark)',
-                  border: '2px solid var(--color-ink)',
-                }}
-              >
-                {fileIcon[ext] ?? '📄'}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-bold truncate" style={{ color: 'var(--color-ink)' }}>
-                  {upload.file_name}
-                </p>
-                <p className="text-xs font-semibold mt-0.5" style={{ color: 'var(--color-ink-muted)' }}>
-                  {new Date(upload.created_at).toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                  })}
-                </p>
-              </div>
-              <StatusBadge status={upload.status} />
-            </div>
-          )
-        })}
+      {/* Upload list — populated once upload API is wired */}
+      <div
+        className="card flex flex-col items-center justify-center py-16 text-center"
+        style={{ color: 'var(--color-ink-muted)' }}
+      >
+        <p className="font-bold text-lg">No uploads yet</p>
+        <p className="text-sm mt-1">Upload a PDF, PPTX, CSV, or .apkg file to get started.</p>
       </div>
     </div>
   )
