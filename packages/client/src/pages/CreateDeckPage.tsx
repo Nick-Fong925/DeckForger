@@ -4,6 +4,11 @@ import { useCreateDeck } from '@/hooks/useCreateDeck'
 import { useCreateDeckForm } from '@/hooks/useCreateDeckForm'
 import CardFormRow from '@/components/deck/CardFormRow'
 
+// Strips HTML tags and checks for non-whitespace content
+function isHtmlEmpty(html: string): boolean {
+  return !html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim()
+}
+
 export default function CreateDeckPage(): ReactElement {
   const navigate = useNavigate()
   const { mutate, isPending, isError, error } = useCreateDeck()
@@ -12,9 +17,6 @@ export default function CreateDeckPage(): ReactElement {
     handleTitleChange, handleDescriptionChange,
     handleCardChange, handleAddCard, handleRemoveCard,
   } = useCreateDeckForm()
-
-  // Strips HTML tags then checks for non-whitespace content
-  const isHtmlEmpty = (html: string): boolean => !html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim()
 
   const hasValidCards = cards.some((c) => !isHtmlEmpty(c.front) && !isHtmlEmpty(c.back))
   const canSubmit = !isPending && title.trim().length > 0 && hasValidCards

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query'
 import type { Upload, UploadStatus } from '@deckforge/shared'
 import { fetchUploads } from '@/services/api/uploads'
 
@@ -11,7 +11,7 @@ function shouldPoll(uploads: Upload[] | undefined): boolean {
   return uploads.some((u) => POLLING_STATUSES.has(u.status))
 }
 
-export function useUploads() {
+export function useUploads(): UseQueryResult<Upload[], Error> {
   const queryClient = useQueryClient()
   const query = useQuery<Upload[], Error>({
     queryKey: ['uploads'],

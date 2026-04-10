@@ -6,8 +6,12 @@ import { useUpdateDeck } from '@/hooks/useUpdateDeckCards'
 import { useDeleteDeck } from '@/hooks/useDeleteDeck'
 import CardPreview from '@/components/deck/CardPreview'
 import CardFormRow from '@/components/deck/CardFormRow'
+import DeckDetailActions, { type PageMode } from '@/components/deck/DeckDetailActions'
 
-type PageMode = 'view' | 'edit' | 'confirm-delete'
+// Strips HTML tags and checks for non-whitespace content
+function isHtmlEmpty(html: string): boolean {
+  return !html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim()
+}
 
 export default function DeckDetailPage(): ReactElement {
   const { id } = useParams<{ id: string }>()
@@ -23,8 +27,6 @@ export default function DeckDetailPage(): ReactElement {
     editor.reset(deck)
     setMode('edit')
   }
-
-  const isHtmlEmpty = (html: string): boolean => !html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim()
 
   function handleSave(): void {
     const validCards = editor.cards.filter((c) => !isHtmlEmpty(c.front) && !isHtmlEmpty(c.back))
@@ -91,45 +93,16 @@ export default function DeckDetailPage(): ReactElement {
           </p>
         </div>
 
-        <div className="flex gap-2 shrink-0">
-          {mode === 'view' && (
-            <>
-              <button className="btn btn-secondary" onClick={handleEditStart}>Edit Cards</button>
-              <button className="btn btn-primary" onClick={() => navigate(`/decks/${id}/study`)}>Study Now</button>
-              <button
-                className="btn btn-secondary"
-                style={{ color: 'var(--color-coral)', borderColor: 'var(--color-coral)', boxShadow: '3px 3px 0 var(--color-coral)' }}
-                onClick={() => setMode('confirm-delete')}
-              >
-                Delete
-              </button>
-            </>
-          )}
-          {mode === 'edit' && (
-            <>
-              <button className="btn btn-secondary" onClick={() => setMode('view')} disabled={isSaving}>Cancel</button>
-              <button className="btn btn-primary" onClick={handleSave} disabled={isSaving}>
-                {isSaving ? 'Saving…' : 'Save'}
-              </button>
-            </>
-          )}
-          {mode === 'confirm-delete' && (
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-semibold" style={{ color: 'var(--color-ink)' }}>
-                Delete this deck?
-              </span>
-              <button className="btn btn-secondary" onClick={() => setMode('view')} disabled={isDeleting}>Cancel</button>
-              <button
-                className="btn btn-primary"
-                style={{ background: 'var(--color-coral)' }}
-                onClick={handleDeleteConfirm}
-                disabled={isDeleting}
-              >
-                {isDeleting ? 'Deleting…' : 'Yes, delete'}
-              </button>
-            </div>
-          )}
-        </div>
+        <DeckDetailActions
+          mode={mode}
+          isSaving={isSaving}
+          isDeleting={isDeleting}
+          onEditStart={handleEditStart}
+          onStudy={() => navigate(`/decks/${id}/study`)}
+          onSave={handleSave}
+          onSetMode={setMode}
+          onDeleteConfirm={handleDeleteConfirm}
+        />
       </div>
 
       {mode === 'edit' ? (
