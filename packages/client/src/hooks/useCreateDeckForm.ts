@@ -1,14 +1,17 @@
 import { useState } from 'react'
 
 type CardRow = {
+  id: string
   front: string
   back: string
 }
 
 type CreateDeckFormState = {
   title: string
+  description: string
   cards: CardRow[]
   handleTitleChange: (value: string) => void
+  handleDescriptionChange: (value: string) => void
   handleCardChange: (index: number, field: 'front' | 'back', value: string) => void
   handleAddCard: () => void
   handleRemoveCard: (index: number) => void
@@ -16,10 +19,15 @@ type CreateDeckFormState = {
 
 export function useCreateDeckForm(): CreateDeckFormState {
   const [title, setTitle] = useState('')
-  const [cards, setCards] = useState<CardRow[]>([{ front: '', back: '' }])
+  const [description, setDescription] = useState('')
+  const [cards, setCards] = useState<CardRow[]>([{ id: crypto.randomUUID(), front: '', back: '' }])
 
   function handleTitleChange(value: string): void {
     setTitle(value)
+  }
+
+  function handleDescriptionChange(value: string): void {
+    setDescription(value)
   }
 
   function handleCardChange(index: number, field: 'front' | 'back', value: string): void {
@@ -27,12 +35,12 @@ export function useCreateDeckForm(): CreateDeckFormState {
   }
 
   function handleAddCard(): void {
-    setCards((prev) => [...prev, { front: '', back: '' }])
+    setCards((prev) => [...prev, { id: crypto.randomUUID(), front: '', back: '' }])
   }
 
   function handleRemoveCard(index: number): void {
     setCards((prev) => prev.filter((_, i) => i !== index))
   }
 
-  return { title, cards, handleTitleChange, handleCardChange, handleAddCard, handleRemoveCard }
+  return { title, description, cards, handleTitleChange, handleDescriptionChange, handleCardChange, handleAddCard, handleRemoveCard }
 }

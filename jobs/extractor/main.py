@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from lib.firestore_client import get_db
 from lib.webhook import call_webhook
-from parsers import apkg_to_cards, csv_to_cards, pdf_to_text, pptx_to_text
+from parsers import apkg_to_cards, csv_to_cards, pdf_to_text, pptx_to_text, tsv_to_cards
 
 TMP_DIR = os.path.join(os.path.dirname(__file__), '..', 'tmp')
 _UPLOAD_ID_RE = re.compile(r'^[A-Za-z0-9_-]+$')
@@ -67,6 +67,8 @@ def run(upload_id: str, server_url: str, webhook_secret: str) -> None:
         write_deck(firebase_uid, upload_id, title, csv_to_cards(file_path))
     elif file_type == 'apkg':
         write_deck(firebase_uid, upload_id, title, apkg_to_cards(file_path))
+    elif file_type == 'tsv':
+        write_deck(firebase_uid, upload_id, title, tsv_to_cards(file_path))
     else:
         raise ValueError(f'Unsupported file type')
 

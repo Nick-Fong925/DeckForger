@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Projects/DeckForger/**)",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)",
+      "Bash(xargs ls:*)",
+      "Bash(curl:*)",
+      "Bash(ls C:/Projects/DeckForger/packages/client/.env*)",
+      "Bash(firebase --version)",
+      "Bash(xargs cat:*)"
+    ]
+  }
+}

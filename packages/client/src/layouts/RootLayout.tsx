@@ -1,21 +1,14 @@
 import { type ReactElement } from 'react'
 import { Outlet, NavLink } from 'react-router-dom'
 import LogoMark from '@/components/art/LogoMark'
-import { useAuth } from '@/hooks/useAuth'
+import UserMenu from '@/components/ui/UserMenu'
 
 const navItems = [
-  { to: '/dashboard', label: 'Home' },
-  { to: '/upload', label: 'Upload' },
   { to: '/decks', label: 'My Decks' },
+  { to: '/upload', label: 'Upload' },
 ]
 
 export default function RootLayout(): ReactElement {
-  const { signOut } = useAuth()
-
-  async function handleSignOut(): Promise<void> {
-    await signOut()
-  }
-
   return (
     <div className="min-h-screen">
       <nav
@@ -33,7 +26,7 @@ export default function RootLayout(): ReactElement {
               DeckForge
             </span>
           </div>
-          <div className="flex gap-1">
+          <div className="flex items-center gap-1">
             {navItems.map(({ to, label }) => (
               <NavLink
                 key={to}
@@ -47,12 +40,9 @@ export default function RootLayout(): ReactElement {
                 {label}
               </NavLink>
             ))}
-            <button
-              onClick={handleSignOut}
-              className="btn btn-ghost text-sm px-3 py-2.5"
-            >
-              Sign out
-            </button>
+            <div className="ml-2">
+              <UserMenu />
+            </div>
           </div>
         </div>
       </nav>

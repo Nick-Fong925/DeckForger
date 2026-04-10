@@ -4,7 +4,6 @@ import { AuthProvider } from './contexts/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import RootLayout from './layouts/RootLayout'
 import LoginPage from './pages/LoginPage'
-import DashboardPage from './pages/DashboardPage'
 import UploadPage from './pages/UploadPage'
 import DecksPage from './pages/DecksPage'
 import DeckDetailPage from './pages/DeckDetailPage'
@@ -18,8 +17,8 @@ export default function App(): ReactElement {
         <Route path="/login" element={<LoginPage />} />
         <Route element={<ProtectedRoute />}>
           <Route element={<RootLayout />}>
-            <Route index element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route index element={<Navigate to="/decks" replace />} />
+            <Route path="/dashboard" element={<Navigate to="/decks" replace />} />
             <Route path="/upload" element={<UploadPage />} />
             <Route path="/decks" element={<DecksPage />} />
             <Route path="/decks/new" element={<CreateDeckPage />} />

@@ -5,8 +5,6 @@ const validCard = {
   id: 'card-1',
   front: 'What is the capital of France?',
   back: 'Paris',
-  front_image_url: null,
-  back_image_url: null,
 }
 
 const validDeck = {
@@ -19,17 +17,8 @@ const validDeck = {
 }
 
 describe('cardSchema', () => {
-  it('accepts a valid card with null image URLs', () => {
+  it('accepts a valid card', () => {
     expect(() => cardSchema.parse(validCard)).not.toThrow()
-  })
-
-  it('accepts a card with valid image URLs', () => {
-    const card = {
-      ...validCard,
-      front_image_url: 'https://storage.googleapis.com/bucket/image.png',
-      back_image_url: 'https://storage.googleapis.com/bucket/image2.png',
-    }
-    expect(() => cardSchema.parse(card)).not.toThrow()
   })
 
   it('rejects an empty front', () => {
@@ -42,24 +31,6 @@ describe('cardSchema', () => {
 
   it('rejects an empty id', () => {
     expect(cardSchema.safeParse({ ...validCard, id: '' }).success).toBe(false)
-  })
-
-  it('rejects a non-URL front_image_url', () => {
-    expect(cardSchema.safeParse({ ...validCard, front_image_url: 'not-a-url' }).success).toBe(false)
-  })
-
-  it('rejects a non-URL back_image_url', () => {
-    expect(cardSchema.safeParse({ ...validCard, back_image_url: 'not-a-url' }).success).toBe(false)
-  })
-
-  it('rejects undefined front_image_url — must be null, not absent', () => {
-    const { front_image_url: _, ...card } = validCard
-    expect(cardSchema.safeParse(card).success).toBe(false)
-  })
-
-  it('rejects undefined back_image_url — must be null, not absent', () => {
-    const { back_image_url: _, ...card } = validCard
-    expect(cardSchema.safeParse(card).success).toBe(false)
   })
 
   it('rejects a missing front field', () => {

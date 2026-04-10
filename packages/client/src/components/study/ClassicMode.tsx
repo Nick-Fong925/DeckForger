@@ -1,5 +1,6 @@
 import { type ReactElement } from 'react'
 import { useClassicModeState } from '@/hooks/useClassicModeState'
+import RichContent from '@/components/ui/RichContent'
 
 type Card = {
   front: string
@@ -84,9 +85,12 @@ export default function ClassicMode({ cards, onExit }: ClassicModeProps): ReactE
         />
       </div>
 
-      {/* Flashcard */}
-      <button
+      {/* Flashcard — div+role instead of button so block HTML inside is valid */}
+      <div
+        role="button"
+        tabIndex={0}
         onClick={flip}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') flip() }}
         className="card w-full min-h-52 sm:min-h-64 flex flex-col items-center justify-center gap-4 p-6 sm:p-8 cursor-pointer transition-colors"
         style={isFlipped ? { background: 'var(--color-amber-light)' } : {}}
       >
@@ -96,18 +100,19 @@ export default function ClassicMode({ cards, onExit }: ClassicModeProps): ReactE
         >
           {isFlipped ? 'Answer' : 'Question'}
         </span>
-        <p className="font-display text-xl text-center leading-relaxed" style={{ color: 'var(--color-ink)' }}>
-          {isFlipped ? card.back : card.front}
-        </p>
+        <div className="font-display text-xl text-center leading-relaxed w-full" style={{ color: 'var(--color-ink)' }}>
+          <RichContent content={isFlipped ? card.back : card.front} />
+        </div>
         {!isFlipped && (
           <span className="text-xs font-bold" style={{ color: 'var(--color-ink-muted)' }}>
             tap to flip
           </span>
         )}
-      </button>
+      </div>
 
       {/* Rating buttons */}
       {isFlipped && (
+        // TODO: wire rating labels to spaced-repetition logic — currently all three ratings advance identically
         <div className="grid grid-cols-3 gap-3">
           {ratingOptions.map(({ label, icon, color }) => (
             <button

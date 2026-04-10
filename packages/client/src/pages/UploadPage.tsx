@@ -85,7 +85,7 @@ export default function UploadPage(): ReactElement {
           <button
             className="btn btn-primary"
             disabled={isPending || !file}
-            onClick={() => { if (file) mutate(file, { onSuccess: () => { setFile(null); navigate('/dashboard') } }) }}
+            onClick={() => { if (file) mutate(file, { onSuccess: () => { setFile(null); navigate('/decks') } }) }}
           >
             {isPending ? 'Uploading…' : 'Generate Deck'}
           </button>

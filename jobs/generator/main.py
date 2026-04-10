@@ -64,8 +64,6 @@ def generate_cards(text: str) -> list[dict[str, Any]]:
             'id': str(uuid.uuid4()),
             'front': card['front'],
             'back': card['back'],
-            'front_image_url': None,
-            'back_image_url': None,
         }
         for card in capped
     ]

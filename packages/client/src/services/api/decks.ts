@@ -1,5 +1,5 @@
 import { apiClient } from '@/lib/axios'
-import type { Deck, CreateDeckInput } from '@deckforge/shared'
+import type { Deck, CreateDeckInput, CreateCardInput } from '@deckforge/shared'
 
 export async function fetchDecks(): Promise<Deck[]> {
   const res = await apiClient.get<Deck[]>('/decks')
@@ -14,4 +14,17 @@ export async function fetchDeck(id: string): Promise<Deck> {
 export async function createDeck(input: CreateDeckInput): Promise<Deck> {
   const res = await apiClient.post<Deck>('/decks', input)
   return res.data
+}
+
+export async function patchDeck(
+  id: string,
+  cards: CreateCardInput[],
+  description: string | null,
+): Promise<Deck> {
+  const res = await apiClient.patch<Deck>(`/decks/${id}`, { cards, description })
+  return res.data
+}
+
+export async function deleteDeck(id: string): Promise<void> {
+  await apiClient.delete(`/decks/${id}`)
 }

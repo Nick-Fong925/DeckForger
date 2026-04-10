@@ -1,12 +1,33 @@
 import csv
 import os
+import re
 import sqlite3
 import tempfile
 import uuid
 import zipfile
+from html import unescape
 from typing import Any
 
 MAX_CARDS_PER_DECK = 500
+
+_CLOZE_RE = re.compile(r'\{\{c\d+::([^:}]+)(?:::[^}]*)?\}\}')
+_HEADER_KEYWORDS = {'front', 'back', 'question', 'answer', 'term', 'definition'}
+
+
+def _strip_html(text: str) -> str:
+    text = re.sub(r'\[sound:[^\]]+\]', '', text)  # Anki [sound:...] tags
+    text = re.sub(r'<[^>]+>', '', text)            # HTML tags
+    return unescape(text).strip()                  # HTML entities (&amp; etc.)
+
+
+def _cloze_to_qa(text: str) -> tuple[str, str]:
+    answers = _CLOZE_RE.findall(text)
+    front = _CLOZE_RE.sub('_____', text)
+    return front, ', '.join(answers)
+
+
+def _is_header_row(row: list[str]) -> bool:
+    return len(row) >= 2 and row[0].strip().lower() in _HEADER_KEYWORDS
 
 
 def pdf_to_text(file_path: str) -> str:
@@ -29,12 +50,17 @@ def pptx_to_text(file_path: str) -> str:
     return '\n\n'.join(slides)
 
 
-def csv_to_cards(file_path: str) -> list[dict[str, Any]]:
+def csv_to_cards(file_path: str, delimiter: str = ',') -> list[dict[str, Any]]:
     cards: list[dict[str, Any]] = []
-    with open(file_path, newline='', encoding='utf-8') as f:
-        reader = csv.reader(f)
-        next(reader, None)  # skip header row
-        for row in reader:
+    # utf-8-sig handles Windows BOM; falls back gracefully for standard UTF-8
+    with open(file_path, newline='', encoding='utf-8-sig') as f:
+        reader = csv.reader(f, delimiter=delimiter)
+        first_row = next(reader, None)
+        if first_row is None:
+            return cards
+        # Include first row as a card only if it doesn't look like a header
+        rows_to_process = iter([first_row]) if not _is_header_row(first_row) else iter([])
+        for row in [*rows_to_process, *reader]:
             if len(cards) >= MAX_CARDS_PER_DECK:
                 break
             if len(row) < 2:
@@ -43,23 +69,21 @@ def csv_to_cards(file_path: str) -> list[dict[str, Any]]:
             back = row[1].strip()
             if not front or not back:
                 continue
-            cards.append({
-                'id': str(uuid.uuid4()),
-                'front': front,
-                'back': back,
-                'front_image_url': None,
-                'back_image_url': None,
-            })
+            cards.append({'id': str(uuid.uuid4()), 'front': front, 'back': back})
     return cards
+
+
+def tsv_to_cards(file_path: str) -> list[dict[str, Any]]:
+    return csv_to_cards(file_path, delimiter='\t')
 
 
 def apkg_to_cards(file_path: str) -> list[dict[str, Any]]:
     # .apkg is a zip containing collection.anki2 (SQLite).
     # The `flds` column uses \x1f (unit separator) to delimit fields.
+    # Field content is stored as HTML; strip tags before returning.
     cards: list[dict[str, Any]] = []
     with tempfile.TemporaryDirectory() as tmp_dir:
         with zipfile.ZipFile(file_path, 'r') as zf:
-            # Zip slip prevention: reject members with path traversal
             for member in zf.namelist():
                 member_path = os.path.realpath(os.path.join(tmp_dir, member))
                 if not member_path.startswith(os.path.realpath(tmp_dir) + os.sep):
@@ -75,17 +99,15 @@ def apkg_to_cards(file_path: str) -> list[dict[str, Any]]:
                 parts = flds.split('\x1f')
                 if len(parts) < 2:
                     continue
-                front = parts[0].strip()
-                back = parts[1].strip()
+                raw_front = _strip_html(parts[0])
+                if _CLOZE_RE.search(raw_front):
+                    front, back = _cloze_to_qa(raw_front)
+                else:
+                    front = raw_front
+                    back = _strip_html(parts[1])
                 if not front or not back:
                     continue
-                cards.append({
-                    'id': str(uuid.uuid4()),
-                    'front': front,
-                    'back': back,
-                    'front_image_url': None,
-                    'back_image_url': None,
-                })
+                cards.append({'id': str(uuid.uuid4()), 'front': front, 'back': back})
         finally:
             conn.close()
     return cards

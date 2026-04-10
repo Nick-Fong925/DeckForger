@@ -1,12 +1,42 @@
-import { type ReactElement } from 'react'
+import { useState, type ReactElement } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useDeck } from '@/hooks/useDeck'
+import { useDeckEditor } from '@/hooks/useDeckEditor'
+import { useUpdateDeck } from '@/hooks/useUpdateDeckCards'
+import { useDeleteDeck } from '@/hooks/useDeleteDeck'
 import CardPreview from '@/components/deck/CardPreview'
+import CardFormRow from '@/components/deck/CardFormRow'
+
+type PageMode = 'view' | 'edit' | 'confirm-delete'
 
 export default function DeckDetailPage(): ReactElement {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { data: deck, isLoading, isError } = useDeck(id)
+  const [mode, setMode] = useState<PageMode>('view')
+  const editor = useDeckEditor({ cards: [] })
+  const { mutate: save, isPending: isSaving } = useUpdateDeck(id ?? '')
+  const { mutate: remove, isPending: isDeleting } = useDeleteDeck()
+
+  function handleEditStart(): void {
+    if (!deck) return
+    editor.reset(deck)
+    setMode('edit')
+  }
+
+  const isHtmlEmpty = (html: string): boolean => !html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim()
+
+  function handleSave(): void {
+    const validCards = editor.cards.filter((c) => !isHtmlEmpty(c.front) && !isHtmlEmpty(c.back))
+    if (validCards.length === 0) return
+    const description = editor.description.trim() || null
+    save({ cards: validCards, description }, { onSuccess: () => setMode('view') })
+  }
+
+  function handleDeleteConfirm(): void {
+    if (!id) return
+    remove(id, { onSuccess: () => navigate('/decks') })
+  }
 
   if (isLoading) {
     return (
@@ -25,33 +55,107 @@ export default function DeckDetailPage(): ReactElement {
     )
   }
 
+  const displayedCardCount = mode === 'edit' ? editor.cards.length : deck.cards.length
+
   return (
     <div className="space-y-8">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <Link to="/decks" className="text-xs font-bold uppercase tracking-widest mb-2 inline-block" style={{ color: 'var(--color-ink-muted)' }}>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex-1 min-w-0">
+          <Link
+            to="/decks"
+            className="text-xs font-bold uppercase tracking-widest mb-2 inline-block"
+            style={{ color: 'var(--color-ink-muted)' }}
+          >
             ← My Decks
           </Link>
           <h1 className="font-display text-2xl sm:text-3xl" style={{ color: 'var(--color-ink)' }}>
             {deck.title}
           </h1>
+          {mode === 'edit' ? (
+            <input
+              type="text"
+              value={editor.description}
+              onChange={(e) => editor.handleDescriptionChange(e.target.value)}
+              placeholder="Add a description…"
+              maxLength={500}
+              className="mt-2 w-full rounded-lg border px-3 py-2 text-sm"
+              style={{ borderColor: 'var(--color-tan)', background: 'var(--color-card)', color: 'var(--color-ink)' }}
+            />
+          ) : (
+            deck.description && (
+              <p className="text-sm mt-1" style={{ color: 'var(--color-ink-muted)' }}>{deck.description}</p>
+            )
+          )}
           <p className="text-sm font-semibold mt-1" style={{ color: 'var(--color-ink-muted)' }}>
-            {deck.cards.length} {deck.cards.length === 1 ? 'card' : 'cards'}
+            {displayedCardCount} {displayedCardCount === 1 ? 'card' : 'cards'}
           </p>
         </div>
-        <button
-          className="btn btn-primary"
-          onClick={() => navigate(`/decks/${id}/study`)}
-        >
-          Study Now
-        </button>
+
+        <div className="flex gap-2 shrink-0">
+          {mode === 'view' && (
+            <>
+              <button className="btn btn-secondary" onClick={handleEditStart}>Edit Cards</button>
+              <button className="btn btn-primary" onClick={() => navigate(`/decks/${id}/study`)}>Study Now</button>
+              <button
+                className="btn btn-secondary"
+                style={{ color: 'var(--color-coral)', borderColor: 'var(--color-coral)', boxShadow: '3px 3px 0 var(--color-coral)' }}
+                onClick={() => setMode('confirm-delete')}
+              >
+                Delete
+              </button>
+            </>
+          )}
+          {mode === 'edit' && (
+            <>
+              <button className="btn btn-secondary" onClick={() => setMode('view')} disabled={isSaving}>Cancel</button>
+              <button className="btn btn-primary" onClick={handleSave} disabled={isSaving}>
+                {isSaving ? 'Saving…' : 'Save'}
+              </button>
+            </>
+          )}
+          {mode === 'confirm-delete' && (
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-semibold" style={{ color: 'var(--color-ink)' }}>
+                Delete this deck?
+              </span>
+              <button className="btn btn-secondary" onClick={() => setMode('view')} disabled={isDeleting}>Cancel</button>
+              <button
+                className="btn btn-primary"
+                style={{ background: 'var(--color-coral)' }}
+                onClick={handleDeleteConfirm}
+                disabled={isDeleting}
+              >
+                {isDeleting ? 'Deleting…' : 'Yes, delete'}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {deck.cards.map((card, i) => (
-          <CardPreview key={card.id} front={card.front} back={card.back} index={i} />
-        ))}
-      </div>
+      {mode === 'edit' ? (
+        <div className="space-y-3">
+          {editor.cards.map((card, i) => (
+            <CardFormRow
+              key={card.id}
+              index={i}
+              front={card.front}
+              back={card.back}
+              onFrontChange={(v) => editor.handleCardChange(i, 'front', v)}
+              onBackChange={(v) => editor.handleCardChange(i, 'back', v)}
+              onRemove={() => editor.handleRemoveCard(i)}
+            />
+          ))}
+          <button type="button" onClick={editor.handleAddCard} className="btn btn-secondary w-full">
+            + Add Card
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {deck.cards.map((card, i) => (
+            <CardPreview key={card.id} front={card.front} back={card.back} index={i} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }

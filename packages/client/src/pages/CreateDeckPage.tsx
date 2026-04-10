@@ -7,16 +7,27 @@ import CardFormRow from '@/components/deck/CardFormRow'
 export default function CreateDeckPage(): ReactElement {
   const navigate = useNavigate()
   const { mutate, isPending, isError, error } = useCreateDeck()
-  const { title, cards, handleTitleChange, handleCardChange, handleAddCard, handleRemoveCard } =
-    useCreateDeckForm()
+  const {
+    title, description, cards,
+    handleTitleChange, handleDescriptionChange,
+    handleCardChange, handleAddCard, handleRemoveCard,
+  } = useCreateDeckForm()
 
-  const hasValidCards = cards.some((c) => c.front.trim() && c.back.trim())
+  // Strips HTML tags then checks for non-whitespace content
+  const isHtmlEmpty = (html: string): boolean => !html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim()
+
+  const hasValidCards = cards.some((c) => !isHtmlEmpty(c.front) && !isHtmlEmpty(c.back))
   const canSubmit = !isPending && title.trim().length > 0 && hasValidCards
 
   function handleSubmit(e: FormEvent): void {
     e.preventDefault()
     mutate(
-      { upload_id: null, title: title.trim(), cards: cards.filter((c) => c.front.trim() && c.back.trim()) },
+      {
+        upload_id: null,
+        title: title.trim(),
+        description: description.trim() || undefined,
+        cards: cards.filter((c) => !isHtmlEmpty(c.front) && !isHtmlEmpty(c.back)),
+      },
       { onSuccess: (deck) => navigate(`/decks/${deck.id}`) },
     )
   }
@@ -35,14 +46,30 @@ export default function CreateDeckPage(): ReactElement {
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">
           <label className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--color-ink-muted)' }}>
-            Deck Title
+            Deck Title <span style={{ color: 'var(--color-coral)' }}>*</span>
           </label>
           <input
             type="text"
             placeholder="e.g. Biology Chapter 4"
             value={title}
             onChange={(e) => handleTitleChange(e.target.value)}
+            required
             className="w-full rounded-lg border px-4 py-3 font-semibold"
+            style={{ borderColor: 'var(--color-tan)', background: 'var(--color-card)', color: 'var(--color-ink)' }}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--color-ink-muted)' }}>
+            Description
+          </label>
+          <input
+            type="text"
+            placeholder="e.g. Key terms and definitions for the midterm"
+            value={description}
+            onChange={(e) => handleDescriptionChange(e.target.value)}
+            maxLength={500}
+            className="w-full rounded-lg border px-4 py-3"
             style={{ borderColor: 'var(--color-tan)', background: 'var(--color-card)', color: 'var(--color-ink)' }}
           />
         </div>
@@ -53,7 +80,7 @@ export default function CreateDeckPage(): ReactElement {
           </p>
           {cards.map((card, i) => (
             <CardFormRow
-              key={i}
+              key={card.id}
               index={i}
               front={card.front}
               back={card.back}

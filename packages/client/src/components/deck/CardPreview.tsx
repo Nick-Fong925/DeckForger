@@ -1,4 +1,5 @@
 import { type ReactElement } from 'react'
+import RichContent from '@/components/ui/RichContent'
 
 type CardPreviewProps = {
   front: string
@@ -12,13 +13,9 @@ export default function CardPreview({ front, back, index }: CardPreviewProps): R
       <p className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--color-ink-muted)' }}>
         Card {index + 1}
       </p>
-      <p className="font-bold text-sm" style={{ color: 'var(--color-ink)' }}>
-        {front}
-      </p>
+      <RichContent content={front} className="font-bold text-sm" />
       <hr style={{ borderColor: 'var(--color-tan)' }} />
-      <p className="text-sm" style={{ color: 'var(--color-ink-muted)' }}>
-        {back}
-      </p>
+      <RichContent content={back} className="text-sm" />
     </div>
   )
 }

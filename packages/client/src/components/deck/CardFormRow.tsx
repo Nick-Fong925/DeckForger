@@ -1,4 +1,5 @@
 import { type ReactElement } from 'react'
+import RichCardField from '@/components/deck/RichCardField'
 
 type CardFormRowProps = {
   index: number
@@ -18,35 +19,44 @@ export default function CardFormRow({
   onRemove,
 }: CardFormRowProps): ReactElement {
   return (
-    <div className="card flex flex-col sm:flex-row gap-3 p-4">
-      <p className="text-xs font-bold uppercase tracking-widest self-center w-12 shrink-0" style={{ color: 'var(--color-ink-muted)' }}>
-        #{index + 1}
-      </p>
-      <input
-        type="text"
-        placeholder="Front"
-        value={front}
-        onChange={(e) => onFrontChange(e.target.value)}
-        className="flex-1 rounded-lg border px-3 py-2 text-sm font-semibold"
-        style={{ borderColor: 'var(--color-tan)', background: 'var(--color-card)', color: 'var(--color-ink)' }}
-      />
-      <input
-        type="text"
-        placeholder="Back"
-        value={back}
-        onChange={(e) => onBackChange(e.target.value)}
-        className="flex-1 rounded-lg border px-3 py-2 text-sm font-semibold"
-        style={{ borderColor: 'var(--color-tan)', background: 'var(--color-card)', color: 'var(--color-ink)' }}
-      />
-      <button
-        type="button"
-        onClick={onRemove}
-        className="btn btn-ghost shrink-0"
-        style={{ color: 'var(--color-coral)' }}
-        aria-label="Remove card"
-      >
-        ✕
-      </button>
+    <div className="card flex flex-col gap-4 p-4">
+      <div className="flex items-center justify-between">
+        <p
+          className="text-xs font-bold uppercase tracking-widest"
+          style={{ color: 'var(--color-ink-muted)' }}
+        >
+          #{index + 1}
+        </p>
+        <button
+          type="button"
+          onClick={onRemove}
+          className="btn btn-ghost"
+          style={{ color: 'var(--color-coral)', minHeight: 'unset', padding: '0.25rem 0.5rem' }} // minHeight: unset — intentional exception to 44px rule
+          aria-label="Remove card"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div className="space-y-1">
+        <p
+          className="text-xs font-bold uppercase tracking-widest"
+          style={{ color: 'var(--color-ink-muted)' }}
+        >
+          Front
+        </p>
+        <RichCardField value={front} onChange={onFrontChange} />
+      </div>
+
+      <div className="space-y-1">
+        <p
+          className="text-xs font-bold uppercase tracking-widest"
+          style={{ color: 'var(--color-ink-muted)' }}
+        >
+          Back
+        </p>
+        <RichCardField value={back} onChange={onBackChange} />
+      </div>
     </div>
   )
 }

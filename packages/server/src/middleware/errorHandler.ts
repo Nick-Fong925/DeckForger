@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction } from 'express'
+import { logger } from '../lib/logger'
 
 export class AppError extends Error {
   constructor(
@@ -44,6 +45,7 @@ export function errorHandler(
     return
   }
 
+  logger.error({ err }, 'Unhandled error')
   const isProduction = process.env['NODE_ENV'] === 'production'
   res.status(500).json({
     error: isProduction ? 'Internal server error' : String(err),

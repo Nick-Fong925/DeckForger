@@ -11,6 +11,8 @@ const ALLOWED_EXTENSIONS: Record<string, FileType> = {
   '.pptx': 'pptx',
   '.csv': 'csv',
   '.apkg': 'apkg',
+  '.tsv': 'tsv',
+  '.txt': 'tsv', // Anki's default text export extension (tab-separated)
 }
 
 // ZIP magic bytes — covers PPTX and APKG (both are ZIP-based)
