@@ -18,6 +18,7 @@ export default function DeckDetailPage(): ReactElement {
   const navigate = useNavigate()
   const { data: deck, isLoading, isError } = useDeck(id)
   const [mode, setMode] = useState<PageMode>('view')
+  const [editingCardId, setEditingCardId] = useState<string | null>(null)
   const editor = useDeckEditor({ cards: [] })
   const { mutate: save, isPending: isSaving } = useUpdateDeck(id ?? '')
   const { mutate: remove, isPending: isDeleting } = useDeleteDeck()
@@ -25,6 +26,7 @@ export default function DeckDetailPage(): ReactElement {
   function handleEditStart(): void {
     if (!deck) return
     editor.reset(deck)
+    setEditingCardId(null)
     setMode('edit')
   }
 
@@ -33,6 +35,30 @@ export default function DeckDetailPage(): ReactElement {
     if (validCards.length === 0) return
     const description = editor.description.trim() || null
     save({ cards: validCards, description }, { onSuccess: () => setMode('view') })
+  }
+
+  function handleCardEditStart(cardId: string): void {
+    if (!deck) return
+    editor.reset(deck)
+    setEditingCardId(cardId)
+  }
+
+  function handleCardSave(cardId: string): void {
+    if (!deck) return
+    const updatedCards = deck.cards.map((c) => {
+      const edited = editor.cards.find((ec) => ec.id === c.id)
+      return edited ?? c
+    })
+    const validCards = updatedCards.filter((c) => !isHtmlEmpty(c.front) && !isHtmlEmpty(c.back))
+    if (validCards.length === 0) return
+    save(
+      { cards: validCards, description: deck.description ?? null },
+      { onSuccess: () => setEditingCardId(null) },
+    )
+  }
+
+  function handleCardEditCancel(): void {
+    setEditingCardId(null)
   }
 
   function handleDeleteConfirm(): void {
@@ -124,9 +150,52 @@ export default function DeckDetailPage(): ReactElement {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {deck.cards.map((card, i) => (
-            <CardPreview key={card.id} front={card.front} back={card.back} index={i} />
-          ))}
+          {deck.cards.map((card, i) => {
+            const isEditing = editingCardId === card.id
+            const editorCard = editor.cards.find((ec) => ec.id === card.id)
+
+            if (isEditing && editorCard !== undefined) {
+              return (
+                <div key={card.id} className="col-span-full space-y-3">
+                  <CardFormRow
+                    index={i}
+                    front={editorCard.front}
+                    back={editorCard.back}
+                    onFrontChange={(v) => editor.handleCardChange(i, 'front', v)}
+                    onBackChange={(v) => editor.handleCardChange(i, 'back', v)}
+                    onRemove={handleCardEditCancel}
+                  />
+                  <div className="flex gap-2 justify-end">
+                    <button
+                      type="button"
+                      onClick={handleCardEditCancel}
+                      className="btn btn-ghost"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleCardSave(card.id)}
+                      disabled={isSaving}
+                      className="btn btn-primary"
+                    >
+                      {isSaving ? 'Saving…' : 'Save card'}
+                    </button>
+                  </div>
+                </div>
+              )
+            }
+
+            return (
+              <CardPreview
+                key={card.id}
+                front={card.front}
+                back={card.back}
+                index={i}
+                onEdit={() => handleCardEditStart(card.id)}
+              />
+            )
+          })}
         </div>
       )}
     </div>

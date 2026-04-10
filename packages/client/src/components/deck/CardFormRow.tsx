@@ -45,7 +45,20 @@ export default function CardFormRow({
         >
           Front
         </p>
-        <RichCardField value={front} onChange={onFrontChange} />
+        <input
+          type="text"
+          value={front}
+          onChange={(e) => onFrontChange(e.target.value)}
+          placeholder="Question or term…"
+          className="w-full rounded-lg px-3 py-2 text-sm"
+          style={{
+            border: '1.5px solid var(--color-tan)',
+            background: 'var(--color-card)',
+            color: 'var(--color-ink)',
+            outline: 'none',
+            fontFamily: 'var(--font-body)',
+          }}
+        />
       </div>
 
       <div className="space-y-1">
@@ -55,7 +68,7 @@ export default function CardFormRow({
         >
           Back
         </p>
-        <RichCardField value={back} onChange={onBackChange} />
+        <RichCardField value={back} onChange={onBackChange} size="large" />
       </div>
     </div>
   )

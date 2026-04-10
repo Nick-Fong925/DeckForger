@@ -1,30 +1,73 @@
 import { useState } from 'react'
 
-type ClassicModeState = {
-  index: number
-  isFlipped: boolean
-  isDone: boolean
-  flip: () => void
-  advance: (totalCards: number) => void
+type Card = {
+  front: string
+  back: string
 }
 
-export function useClassicModeState(): ClassicModeState {
-  const [index, setIndex] = useState(0)
+type QueueCard = Card & { easyCount: number }
+
+export type Rating = 'again' | 'good' | 'easy'
+
+const AGAIN_OFFSET = 3
+const GOOD_OFFSET = 7
+const EASY_OFFSET = 10
+
+type ClassicModeState = {
+  currentCard: Card | null
+  isFlipped: boolean
+  isDone: boolean
+  completed: number
+  total: number
+  flip: () => void
+  advance: (rating: Rating) => void
+}
+
+export function useClassicModeState(cards: Card[]): ClassicModeState {
+  const [queue, setQueue] = useState<QueueCard[]>(() =>
+    cards.map((c) => ({ ...c, easyCount: 0 })),
+  )
   const [isFlipped, setIsFlipped] = useState(false)
-  const [isDone, setIsDone] = useState(false)
+  const [completed, setCompleted] = useState(0)
+
+  const total = cards.length
+  const currentCard = queue[0] ?? null
+  const isDone = queue.length === 0
 
   function flip(): void {
     setIsFlipped((f) => !f)
   }
 
-  function advance(totalCards: number): void {
-    if (index + 1 >= totalCards) {
-      setIsDone(true)
+  function advance(rating: Rating): void {
+    const current = queue[0]
+    if (!current) return
+
+    const rest = queue.slice(1)
+
+    if (rating === 'again') {
+      const insertAt = Math.min(AGAIN_OFFSET, rest.length)
+      const next = [...rest]
+      next.splice(insertAt, 0, { ...current, easyCount: 0 })
+      setQueue(next)
+    } else if (rating === 'good') {
+      const insertAt = Math.min(GOOD_OFFSET, rest.length)
+      const next = [...rest]
+      next.splice(insertAt, 0, current)
+      setQueue(next)
     } else {
-      setIndex((i) => i + 1)
-      setIsFlipped(false)
+      if (current.easyCount >= 1) {
+        setQueue(rest)
+        setCompleted((c) => c + 1)
+      } else {
+        const insertAt = Math.min(EASY_OFFSET, rest.length)
+        const next = [...rest]
+        next.splice(insertAt, 0, { ...current, easyCount: 1 })
+        setQueue(next)
+      }
     }
+
+    setIsFlipped(false)
   }
 
-  return { index, isFlipped, isDone, flip, advance }
+  return { currentCard, isFlipped, isDone, completed, total, flip, advance }
 }

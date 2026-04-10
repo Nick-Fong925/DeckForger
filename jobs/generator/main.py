@@ -90,7 +90,7 @@ def run(upload_id: str, server_url: str, webhook_secret: str) -> None:
         'upload_id': upload_id,
         'title': title,
         'cards': cards,
-        'created_at': datetime.now(timezone.utc).isoformat(),
+        'created_at': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z',
     })
 
     call_webhook(server_url, webhook_secret, upload_id, 'generator', 'complete')

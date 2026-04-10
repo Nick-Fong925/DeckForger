@@ -2,6 +2,7 @@ import { type ReactElement } from 'react'
 import { Outlet, NavLink } from 'react-router-dom'
 import LogoMark from '@/components/art/LogoMark'
 import UserMenu from '@/components/ui/UserMenu'
+import { useUploads } from '@/hooks/useUploads'
 
 const navItems = [
   { to: '/decks', label: 'My Decks' },
@@ -9,6 +10,9 @@ const navItems = [
 ]
 
 export default function RootLayout(): ReactElement {
+  // Runs the upload polling + cascade deck invalidation globally, regardless of current page
+  useUploads()
+
   return (
     <div className="min-h-screen">
       <nav

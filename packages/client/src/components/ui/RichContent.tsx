@@ -6,8 +6,9 @@ import { type ReactElement } from 'react'
 // RETURN_DOM: false is explicit so the cast to string is structurally guaranteed,
 // not just assumed (if RETURN_DOM were ever set to true, sanitize returns a Node, not string).
 const CLEAN_CONFIG = {
-  ALLOWED_TAGS: ['p', 'strong', 'em', 'ul', 'ol', 'li', 'code', 'pre', 'h1', 'h2', 'h3', 'h4', 'br', 'blockquote'],
-  ALLOWED_ATTR: [] as string[],
+  ALLOWED_TAGS: ['p', 'div', 'span', 'strong', 'em', 'b', 'i', 'ul', 'ol', 'li', 'code', 'pre', 'h1', 'h2', 'h3', 'h4', 'br', 'blockquote'],
+  ALLOWED_ATTR: ['style'] as string[],
+  ALLOWED_STYLES: { '*': { 'font-size': [/.*/] } },
   RETURN_DOM: false as const,
   RETURN_DOM_FRAGMENT: false as const,
 }

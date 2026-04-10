@@ -39,7 +39,7 @@ def write_deck(
         'upload_id': upload_id,
         'title': title,
         'cards': cards,
-        'created_at': datetime.now(timezone.utc).isoformat(),
+        'created_at': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z',
     }
     db.collection('decks').document().set(deck)
 

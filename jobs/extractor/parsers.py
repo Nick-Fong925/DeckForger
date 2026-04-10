@@ -20,6 +20,11 @@ def _strip_html(text: str) -> str:
     return unescape(text).strip()                  # HTML entities (&amp; etc.)
 
 
+def _clean_anki_html(text: str) -> str:
+    """Remove Anki-specific non-HTML tokens but preserve HTML for frontend rendering."""
+    return re.sub(r'\[sound:[^\]]+\]', '', text).strip()
+
+
 def _cloze_to_qa(text: str) -> tuple[str, str]:
     answers = _CLOZE_RE.findall(text)
     front = _CLOZE_RE.sub('_____', text)
@@ -77,8 +82,31 @@ def tsv_to_cards(file_path: str) -> list[dict[str, Any]]:
     return csv_to_cards(file_path, delimiter='\t')
 
 
+def _open_anki_db(tmp_dir: str) -> sqlite3.Connection:
+    # Prefer newer formats first; fall back to legacy collection.anki2.
+    # collection.anki21b: zstd-compressed SQLite (Anki 2.1.50+)
+    anki21b = os.path.join(tmp_dir, 'collection.anki21b')
+    if os.path.exists(anki21b):
+        import zstandard
+        with open(anki21b, 'rb') as f:
+            compressed = f.read()
+        data = zstandard.ZstdDecompressor().decompress(compressed, max_output_size=500 * 1024 * 1024)
+        out_path = os.path.join(tmp_dir, 'collection.sqlite')
+        with open(out_path, 'wb') as f:
+            f.write(data)
+        return sqlite3.connect(out_path)
+
+    # collection.anki21: plain SQLite (Anki 2.1.x before 2.1.50)
+    anki21 = os.path.join(tmp_dir, 'collection.anki21')
+    if os.path.exists(anki21):
+        return sqlite3.connect(anki21)
+
+    # collection.anki2: legacy SQLite (Anki 2.0 / stub in newer exports)
+    return sqlite3.connect(os.path.join(tmp_dir, 'collection.anki2'))
+
+
 def apkg_to_cards(file_path: str) -> list[dict[str, Any]]:
-    # .apkg is a zip containing collection.anki2 (SQLite).
+    # .apkg is a zip containing a SQLite database with notes.
     # The `flds` column uses \x1f (unit separator) to delimit fields.
     # Field content is stored as HTML; strip tags before returning.
     cards: list[dict[str, Any]] = []
@@ -89,8 +117,7 @@ def apkg_to_cards(file_path: str) -> list[dict[str, Any]]:
                 if not member_path.startswith(os.path.realpath(tmp_dir) + os.sep):
                     raise ValueError(f'Zip slip attempt detected in member: {member}')
             zf.extractall(tmp_dir)
-        db_path = os.path.join(tmp_dir, 'collection.anki2')
-        conn = sqlite3.connect(db_path)
+        conn = _open_anki_db(tmp_dir)
         try:
             cursor = conn.execute('SELECT flds FROM notes')
             for (flds,) in cursor:
@@ -99,13 +126,16 @@ def apkg_to_cards(file_path: str) -> list[dict[str, Any]]:
                 parts = flds.split('\x1f')
                 if len(parts) < 2:
                     continue
-                raw_front = _strip_html(parts[0])
+                # Preserve HTML so the frontend can render formatting, line breaks, etc.
+                # Only strip Anki-specific [sound:...] tokens — DOMPurify sanitizes on the client.
+                raw_front = _clean_anki_html(parts[0])
                 if _CLOZE_RE.search(raw_front):
                     front, back = _cloze_to_qa(raw_front)
                 else:
                     front = raw_front
-                    back = _strip_html(parts[1])
-                if not front or not back:
+                    back = _clean_anki_html(parts[1])
+                # Use tag-stripped version only for the emptiness check
+                if not _strip_html(front) or not _strip_html(back):
                     continue
                 cards.append({'id': str(uuid.uuid4()), 'front': front, 'back': back})
         finally:

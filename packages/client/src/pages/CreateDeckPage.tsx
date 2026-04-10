@@ -1,4 +1,4 @@
-import { type ReactElement, type FormEvent } from 'react'
+import { type ReactElement, type FormEvent, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCreateDeck } from '@/hooks/useCreateDeck'
 import { useCreateDeckForm } from '@/hooks/useCreateDeckForm'
@@ -17,12 +17,21 @@ export default function CreateDeckPage(): ReactElement {
     handleTitleChange, handleDescriptionChange,
     handleCardChange, handleAddCard, handleRemoveCard,
   } = useCreateDeckForm()
+  const [titleError, setTitleError] = useState(false)
+  const titleRef = useRef<HTMLInputElement>(null)
 
   const hasValidCards = cards.some((c) => !isHtmlEmpty(c.front) && !isHtmlEmpty(c.back))
-  const canSubmit = !isPending && title.trim().length > 0 && hasValidCards
+  const canSubmit = !isPending && hasValidCards
 
   function handleSubmit(e: FormEvent): void {
     e.preventDefault()
+    if (!title.trim()) {
+      setTitleError(true)
+      titleRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      titleRef.current?.focus()
+      return
+    }
+    setTitleError(false)
     mutate(
       {
         upload_id: null,
@@ -51,14 +60,23 @@ export default function CreateDeckPage(): ReactElement {
             Deck Title <span style={{ color: 'var(--color-coral)' }}>*</span>
           </label>
           <input
+            ref={titleRef}
             type="text"
             placeholder="e.g. Biology Chapter 4"
             value={title}
-            onChange={(e) => handleTitleChange(e.target.value)}
-            required
-            className="w-full rounded-lg border px-4 py-3 font-semibold"
-            style={{ borderColor: 'var(--color-tan)', background: 'var(--color-card)', color: 'var(--color-ink)' }}
+            onChange={(e) => { handleTitleChange(e.target.value); if (titleError) setTitleError(false) }}
+            className={`w-full rounded-lg border px-4 py-3 font-semibold ${titleError ? 'border-2' : ''}`}
+            style={{
+              borderColor: titleError ? 'var(--color-coral)' : 'var(--color-tan)',
+              background: titleError ? 'color-mix(in srgb, var(--color-coral) 8%, var(--color-card))' : 'var(--color-card)',
+              color: 'var(--color-ink)',
+            }}
           />
+          {titleError && (
+            <p className="text-xs font-semibold mt-1" style={{ color: 'var(--color-coral)' }}>
+              Required
+            </p>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -102,7 +120,7 @@ export default function CreateDeckPage(): ReactElement {
           </p>
         )}
 
-        <button type="submit" disabled={!canSubmit} className="btn btn-primary w-full">
+        <button type="submit" disabled={isPending} className="btn btn-primary w-full">
           {isPending ? 'Creating…' : 'Create Deck'}
         </button>
       </form>
