@@ -1,5 +1,5 @@
 import { type Deck, type CreateDeckInput, type PatchDeckInput } from '@deckforge/shared'
-import { listDecksByUid, getDeckById, createDeckDoc, updateDeckDoc, deleteDeckDoc } from '../repositories/deckRepository'
+import { listDecksByUid, getDeckById, createDeckDoc, updateDeckDoc, deleteDeckDoc, updateQuizBestScoreDoc } from '../repositories/deckRepository'
 import { getUploadById } from '../repositories/uploadRepository'
 import { NotFoundError } from '../middleware/errorHandler'
 
@@ -25,6 +25,12 @@ export async function updateDeck(id: string, uid: string, input: PatchDeckInput)
   const deck = await getDeckById(id, uid)
   if (!deck) throw new NotFoundError()
   return updateDeckDoc(id, uid, input)
+}
+
+export async function updateQuizBestScore(id: string, uid: string, score: number): Promise<Deck> {
+  const deck = await getDeckById(id, uid)
+  if (!deck) throw new NotFoundError()
+  return updateQuizBestScoreDoc(id, uid, score)
 }
 
 export async function deleteDeck(id: string, uid: string): Promise<void> {

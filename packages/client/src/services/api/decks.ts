@@ -28,3 +28,8 @@ export async function patchDeck(
 export async function deleteDeck(id: string): Promise<void> {
   await apiClient.delete(`/decks/${id}`)
 }
+
+export async function patchQuizScore(id: string, score: number): Promise<Deck> {
+  const res = await apiClient.patch<Deck>(`/decks/${id}/quiz-score`, { score })
+  return res.data
+}

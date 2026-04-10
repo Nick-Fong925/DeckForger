@@ -20,6 +20,8 @@ export const deckSchema = z.object({
   description: z.string().max(500).nullable().optional(),
   cards: z.array(cardSchema).max(MAX_CARDS_PER_DECK),
   created_at: z.string().datetime(),
+  // optional so existing decks without a score parse cleanly
+  quiz_best_score: z.number().int().nonnegative().nullable().optional(),
 })
 
 export type Deck = z.infer<typeof deckSchema>
@@ -54,3 +56,8 @@ export type CreateDeckInput = z.infer<typeof createDeckInputSchema>
 
 export const updateDeckSchema = deckWriteSchema.partial()
 export type UpdateDeckInput = z.infer<typeof updateDeckSchema>
+
+export const patchQuizScoreSchema = z.object({
+  score: z.number().int().nonnegative(),
+})
+export type PatchQuizScoreInput = z.infer<typeof patchQuizScoreSchema>

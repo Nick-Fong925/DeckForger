@@ -79,6 +79,22 @@ export async function deleteDeckDoc(id: string, uid: string): Promise<void> {
   await ref.delete()
 }
 
+export async function updateQuizBestScoreDoc(id: string, uid: string, score: number): Promise<Deck> {
+  const db = getFirestoreDb()
+  const ref = db.collection('decks').doc(id)
+  const snap = await ref.get()
+  if (!snap.exists) throw new Error('Deck not found')
+  const stored = normalizeTimestamps(snap.data()!)
+  if (stored['firebase_uid'] !== uid) throw new Error('Deck not found')
+
+  const currentBest = typeof stored['quiz_best_score'] === 'number' ? stored['quiz_best_score'] : -1
+  if (score > currentBest) {
+    await ref.update({ quiz_best_score: score })
+    return deckSchema.parse({ ...stored, id, quiz_best_score: score })
+  }
+  return deckSchema.parse({ ...stored, id })
+}
+
 export async function getDeckById(id: string, uid: string): Promise<Deck | null> {
   const db = getFirestoreDb()
   const doc = await db.collection('decks').doc(id).get()

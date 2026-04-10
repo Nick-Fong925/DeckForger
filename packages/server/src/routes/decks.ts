@@ -1,10 +1,10 @@
 import { Router } from 'express'
 import { z } from 'zod'
-import { createDeckInputSchema, patchDeckSchema } from '@deckforge/shared'
+import { createDeckInputSchema, patchDeckSchema, patchQuizScoreSchema } from '@deckforge/shared'
 import { authenticate } from '../middleware/auth'
 import { validate, validateParams } from '../middleware/validate'
 import { asyncHandler } from '../middleware/asyncHandler'
-import { listDecks, getDeck, createDeck, updateDeck, deleteDeck } from '../services/deckService'
+import { listDecks, getDeck, createDeck, updateDeck, deleteDeck, updateQuizBestScore } from '../services/deckService'
 import type { AuthenticatedRequest } from '../types'
 
 export const decksRouter = Router()
@@ -47,6 +47,17 @@ decksRouter.patch(
   validate(patchDeckSchema),
   asyncHandler(async (req, res) => {
     const deck = await updateDeck(req.params['id']!, (req as AuthenticatedRequest).user.uid, req.body)
+    res.json(deck)
+  }),
+)
+
+decksRouter.patch(
+  '/:id/quiz-score',
+  authenticate,
+  idParams,
+  validate(patchQuizScoreSchema),
+  asyncHandler(async (req, res) => {
+    const deck = await updateQuizBestScore(req.params['id']!, (req as AuthenticatedRequest).user.uid, req.body.score)
     res.json(deck)
   }),
 )
